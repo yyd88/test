@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>設備盤點系統</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 <style>
   :root {
     --bg: #0f1117;
@@ -429,6 +428,9 @@
     </button>
   </div>
   <br>
+  <button class="btn btn-outline" onclick="manualScan()" style="margin-bottom:10px;">
+    ⌨️ 手動輸入序號
+  </button>
   <button class="btn btn-outline" onclick="goStep(2); stopCamera()">
     ← 返回清單
   </button>
@@ -602,8 +604,10 @@ async function startCamera() {
     });
     const video = document.getElementById('video');
     video.srcObject = state.stream;
-    state.scanActive = true;
-    scanLoop();
+    video.onloadedmetadata = () => {
+      state.scanActive = true;
+      scanLoop();
+    };
   } catch (e) {
     showToast('無法開啟相機：' + e.message, 'error');
   }
@@ -617,73 +621,70 @@ function stopCamera() {
   }
 }
 
-// ── ZXing barcode scan loop ──
+// ── 條碼掃描：優先用原生 BarcodeDetector，備用 ZXing ──
 async function scanLoop() {
   if (!state.scanActive) return;
 
-  // Dynamically load ZXing from CDN
-  if (!window.ZXing) {
-    try {
-      await loadZXing();
-    } catch(e) {
-      // fallback: try again in 500ms
-      setTimeout(scanLoop, 500);
-      return;
-    }
-  }
-
   const video = document.getElementById('video');
-  if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-    requestAnimationFrame(scanLoop);
+  if (!video || video.readyState < 2) {
+    setTimeout(scanLoop, 200);
     return;
   }
 
-  const canvas = document.createElement('canvas');
-  canvas.width  = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0);
+  // 方法一：Chrome Android 原生 BarcodeDetector（最快最準）
+  if ('BarcodeDetector' in window) {
+    try {
+      if (!state.barcodeDetector) {
+        state.barcodeDetector = new BarcodeDetector({
+          formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'qr_code', 'data_matrix', 'upc_a', 'upc_e']
+        });
+      }
+      const codes = await state.barcodeDetector.detect(video);
+      if (codes.length > 0) {
+        onBarcodeScan(codes[0].rawValue);
+        return;
+      }
+    } catch(e) {}
+    if (state.scanActive) setTimeout(scanLoop, 150);
+    return;
+  }
 
-  try {
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = window.ZXingDecoder.decodeFromImageData(imageData);
-    if (code) {
-      onBarcodeScan(code.text);
-      return;
-    }
-  } catch(e) {}
+  // 方法二：ZXing（備用）
+  if (!window.ZXingReader) {
+    await loadZXing();
+  }
+
+  if (window.ZXingReader) {
+    try {
+      const result = await window.ZXingReader.decodeFromVideoElement(video).catch(() => null);
+      if (result) {
+        onBarcodeScan(result.text);
+        return;
+      }
+    } catch(e) {}
+  }
 
   if (state.scanActive) setTimeout(scanLoop, 200);
 }
 
 async function loadZXing() {
-  return new Promise((resolve, reject) => {
-    if (window.ZXing) { resolve(); return; }
+  return new Promise((resolve) => {
+    if (window.ZXingReader) { resolve(); return; }
     const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.20.0/zxing.min.js';
+    // 使用 unpkg 作為備用 CDN
+    script.src = 'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
     script.onload = () => {
-      // Create decoder
       try {
         const hints = new Map();
-        const formats = [
-          ZXing.BarcodeFormat.CODE_128,
-          ZXing.BarcodeFormat.CODE_39,
-          ZXing.BarcodeFormat.EAN_13,
-          ZXing.BarcodeFormat.QR_CODE,
-          ZXing.BarcodeFormat.DATA_MATRIX,
-        ];
-        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
-        window.ZXingDecoder = new ZXing.MultiFormatReader();
-        window.ZXingDecoder.setHints(hints);
-        window.ZXing = ZXing;
+        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+        const reader = new ZXing.BrowserMultiFormatReader(hints);
+        window.ZXingReader = reader;
       } catch(e) {
-        // fallback: use BrowserMultiFormatReader
-        window.ZXingDecoder = { decodeFromImageData: () => null };
-        window.ZXing = true;
+        window.ZXingReader = null;
       }
       resolve();
     };
-    script.onerror = reject;
+    script.onerror = () => { window.ZXingReader = null; resolve(); };
     document.head.appendChild(script);
   });
 }
