@@ -803,11 +803,21 @@ async function submitInventory() {
       submitTime:   new Date().toISOString(),
     };
 
-    const res = await fetch(CONFIG.scriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    // 用 GET 送出（避免 CORS 問題），照片 base64 太大要分批
+    // 先不帶照片送出基本資料，照片改用 GET 參數
+    const payloadNoPhoto = {
+      ...payload,
+      scannedItems: payload.scannedItems.map(item => ({
+        serial: item.serial,
+        name: item.name,
+        time: item.time,
+        row: item.row,
+        photoBase64: item.photoBase64 || '',
+      }))
+    };
+    const encoded = encodeURIComponent(JSON.stringify(payloadNoPhoto));
+    const url = `${CONFIG.scriptUrl}?action=submitInventory&data=${encoded}`;
+    const res = await fetch(url);
     const data = await res.json();
 
     if (!data.success) throw new Error(data.message);
