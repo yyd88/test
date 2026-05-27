@@ -176,42 +176,7 @@
   .device-serial { font-size: 12px; color: var(--muted); font-family: monospace; }
   .device-model { font-size: 12px; color: var(--accent); margin-top: 2px; }
 
-  /* ── Scanner ── */
-  .scanner-wrap {
-    position: relative;
-    border-radius: 14px;
-    overflow: hidden;
-    background: #000;
-    aspect-ratio: 4/3;
-    margin-bottom: 16px;
-  }
-  #video { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .scan-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-  }
-  .scan-frame {
-    width: 200px; height: 120px;
-    border: 2px solid var(--accent);
-    border-radius: 8px;
-    box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
-    position: relative;
-  }
-  .scan-line {
-    position: absolute;
-    left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    animation: scanLine 2s linear infinite;
-  }
-  @keyframes scanLine {
-    0% { top: 0; }
-    100% { top: 100%; }
-  }
+  /* scanner CSS removed */
 
   /* ── Camera Preview ── */
   .photo-preview {
@@ -356,7 +321,7 @@
 <div class="step" id="step2">
   <br>
   <div class="section-title" id="step2Title">設備清單</div>
-  <div class="section-sub" id="step2Sub">點選設備後掃描條碼確認</div>
+  <div class="section-sub" id="step2Sub">點選設備後拍照確認</div>
 
   <div class="stats-row">
     <div class="stat-box">
@@ -371,6 +336,9 @@
 
   <div class="card">
     <div class="card-title">待盤點設備</div>
+    <input type="text" id="searchInput" placeholder="🔍 搜尋商品名稱或序號…" autocomplete="off"
+      oninput="filterDevices(this.value)"
+      style="margin-bottom:14px;">
     <div id="deviceList">
       <div class="loading">
         <div class="spinner"></div><br>載入中...
@@ -384,36 +352,25 @@
   <div class="gap"></div>
 </div>
 
-<!-- ======== STEP 3: SCAN + PHOTO ======== -->
+<!-- ======== STEP 3: PHOTO ======== -->
 <div class="step" id="step3">
   <br>
-  <div class="section-title">📷 掃描確認</div>
-  <div class="section-sub" id="scanDeviceName">請對準設備條碼</div>
+  <div class="section-title">📷 拍照確認</div>
+  <div class="section-sub" id="scanDeviceName">拍攝設備照片供主管審核</div>
 
-  <!-- Scanner -->
+  <!-- Device Info -->
   <div class="card">
-    <div class="card-title">條碼掃描</div>
-    <div class="scanner-wrap">
-      <video id="video" playsinline autoplay muted></video>
-      <div class="scan-overlay">
-        <div class="scan-frame">
-          <div class="scan-line"></div>
-        </div>
-      </div>
-    </div>
-    <div id="scanResult" style="display:none">
-      <div id="matchBadge"></div>
-      <div id="matchInfo"></div>
-    </div>
+    <div class="card-title">設備資訊</div>
+    <div id="deviceInfoBox"></div>
   </div>
 
   <!-- Photo -->
-  <div class="card" id="photoSection" style="display:none">
+  <div class="card">
     <div class="card-title">拍攝設備照片（主管審核用）</div>
     <div class="photo-preview" id="photoPreview">
       <div class="photo-placeholder">
         <div class="icon">📷</div>
-        <span>尚未拍照</span>
+        <span>點下方按鈕拍照</span>
       </div>
     </div>
     <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="onPhotoSelected(this)">
@@ -422,16 +379,11 @@
     </button>
   </div>
 
-  <div id="confirmSection" style="display:none">
-    <button class="btn btn-success" id="confirmBtn" onclick="confirmDevice()" disabled>
-      ✅ 確認此設備在身上
-    </button>
-  </div>
-  <br>
-  <button class="btn btn-outline" onclick="manualScan()" style="margin-bottom:10px;">
-    ⌨️ 手動輸入序號
+  <button class="btn btn-success" id="confirmBtn" onclick="confirmDevice()" disabled>
+    ✅ 確認此設備在身上
   </button>
-  <button class="btn btn-outline" onclick="goStep(2); stopCamera()">
+  <br>
+  <button class="btn btn-outline" onclick="goStep(2)">
     ← 返回清單
   </button>
   <div class="gap"></div>
@@ -503,6 +455,8 @@ let state = {
   photoBase64: null,
   scanActive: false,
   stream: null,
+  pendingConfirm: false,
+  barcodeDetector: null,
 };
 
 // ============================================================
@@ -566,10 +520,33 @@ function renderDeviceList() {
     return;
   }
 
-  list.innerHTML = state.devices.map((d, i) => {
+  renderFilteredList(state.devices);
+}
+
+function filterDevices(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) {
+    renderFilteredList(state.devices);
+    return;
+  }
+  const filtered = state.devices.filter(d =>
+    d.name.toLowerCase().includes(q) ||
+    d.serial.toLowerCase().includes(q)
+  );
+  renderFilteredList(filtered);
+}
+
+function renderFilteredList(list) {
+  const container = document.getElementById('deviceList');
+  if (list.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px;">查無符合的設備</div>`;
+    return;
+  }
+  container.innerHTML = list.map((d) => {
+    const idx = state.devices.indexOf(d);
     const isScanned = state.scannedItems.some(s => s.serial === d.serial);
     return `
-      <div class="device-item ${isScanned ? 'scanned' : ''}" onclick="${isScanned ? '' : 'startScan(' + i + ')'}">
+      <div class="device-item ${isScanned ? 'scanned' : ''}" onclick="${isScanned ? '' : 'startScan(' + idx + ')'}">
         <div class="device-name">${d.name}</div>
         <div class="device-serial">序號：${d.serial}</div>
         ${d.model ? `<div class="device-model">${d.model}</div>` : ''}
@@ -586,139 +563,11 @@ function startScan(idx) {
 
   document.getElementById('scanDeviceName').textContent =
     '掃描：' + state.currentDevice.name;
+  state.pendingConfirm = false;
   document.getElementById('scanResult').style.display = 'none';
-  document.getElementById('photoSection').style.display = 'none';
-  document.getElementById('confirmSection').style.display = 'none';
-  document.getElementById('photoPreview').innerHTML = `
-    <div class="photo-placeholder"><div class="icon">📷</div><span>尚未拍照</span></div>`;
 
-  goStep(3);
-  startCamera();
-}
 
-async function startCamera() {
-  stopCamera();
-  try {
-    state.stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-    });
-    const video = document.getElementById('video');
-    video.srcObject = state.stream;
-    video.onloadedmetadata = () => {
-      state.scanActive = true;
-      scanLoop();
-    };
-  } catch (e) {
-    showToast('無法開啟相機：' + e.message, 'error');
-  }
-}
 
-function stopCamera() {
-  state.scanActive = false;
-  if (state.stream) {
-    state.stream.getTracks().forEach(t => t.stop());
-    state.stream = null;
-  }
-}
-
-// ── 條碼掃描：優先用原生 BarcodeDetector，備用 ZXing ──
-async function scanLoop() {
-  if (!state.scanActive) return;
-
-  const video = document.getElementById('video');
-  if (!video || video.readyState < 2) {
-    setTimeout(scanLoop, 200);
-    return;
-  }
-
-  // 方法一：Chrome Android 原生 BarcodeDetector（最快最準）
-  if ('BarcodeDetector' in window) {
-    try {
-      if (!state.barcodeDetector) {
-        state.barcodeDetector = new BarcodeDetector({
-          formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'qr_code', 'data_matrix', 'upc_a', 'upc_e']
-        });
-      }
-      const codes = await state.barcodeDetector.detect(video);
-      if (codes.length > 0) {
-        onBarcodeScan(codes[0].rawValue);
-        return;
-      }
-    } catch(e) {}
-    if (state.scanActive) setTimeout(scanLoop, 150);
-    return;
-  }
-
-  // 方法二：ZXing（備用）
-  if (!window.ZXingReader) {
-    await loadZXing();
-  }
-
-  if (window.ZXingReader) {
-    try {
-      const result = await window.ZXingReader.decodeFromVideoElement(video).catch(() => null);
-      if (result) {
-        onBarcodeScan(result.text);
-        return;
-      }
-    } catch(e) {}
-  }
-
-  if (state.scanActive) setTimeout(scanLoop, 200);
-}
-
-async function loadZXing() {
-  return new Promise((resolve) => {
-    if (window.ZXingReader) { resolve(); return; }
-    const script = document.createElement('script');
-    // 使用 unpkg 作為備用 CDN
-    script.src = 'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
-    script.onload = () => {
-      try {
-        const hints = new Map();
-        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-        const reader = new ZXing.BrowserMultiFormatReader(hints);
-        window.ZXingReader = reader;
-      } catch(e) {
-        window.ZXingReader = null;
-      }
-      resolve();
-    };
-    script.onerror = () => { window.ZXingReader = null; resolve(); };
-    document.head.appendChild(script);
-  });
-}
-
-function onBarcodeScan(code) {
-  state.scanActive = false;
-  stopCamera();
-
-  const device = state.currentDevice;
-  const found = (code.trim().toUpperCase() === device.serial.trim().toUpperCase());
-
-  const resultDiv = document.getElementById('scanResult');
-  resultDiv.style.display = 'block';
-
-  document.getElementById('matchBadge').innerHTML = found
-    ? `<div class="match-badge found">✅ 條碼符合</div>`
-    : `<div class="match-badge notfound">⚠️ 條碼不符合（掃到：${code}）</div>`;
-
-  document.getElementById('matchInfo').innerHTML = `
-    <div class="info-row"><span class="info-label">品名</span><span class="info-value">${device.name}</span></div>
-    <div class="info-row"><span class="info-label">序號</span><span class="info-value">${device.serial}</span></div>
-    <div class="info-row"><span class="info-label">掃描值</span><span class="info-value">${code}</span></div>
-  `;
-
-  document.getElementById('photoSection').style.display = 'block';
-  document.getElementById('confirmSection').style.display = 'block';
-  document.getElementById('confirmBtn').disabled = true; // 要拍照後才能確認
-}
-
-// ── Manual scan fallback (type serial) ──
-function manualScan() {
-  const code = prompt('手動輸入序號：');
-  if (code) onBarcodeScan(code.trim());
-}
 
 // ============================================================
 //  PHOTO
@@ -753,7 +602,6 @@ function confirmDevice() {
     row:         device.row,
   });
 
-  stopCamera();
   showToast('✅ 已確認：' + device.name, 'success');
   renderDeviceList();
   goStep(2);
