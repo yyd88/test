@@ -6,284 +6,79 @@
 <title>設備盤點系統</title>
 <style>
   :root {
-    --bg: #0f1117;
-    --surface: #1a1d27;
-    --card: #22263a;
-    --border: #2e3354;
-    --accent: #4f9cf9;
-    --accent2: #7c3aed;
-    --success: #22c55e;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --text: #e8eaf6;
-    --muted: #7b82a8;
+    --bg: #0f1117; --surface: #1a1d27; --card: #22263a; --border: #2e3354;
+    --accent: #4f9cf9; --accent2: #7c3aed; --success: #22c55e;
+    --warning: #f59e0b; --danger: #ef4444; --text: #e8eaf6; --muted: #7b82a8;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC','PingFang TC',sans-serif; min-height:100vh; overflow-x:hidden; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Noto Sans TC', 'PingFang TC', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+  .header { background: linear-gradient(135deg,#1a1d27,#22263a); border-bottom:1px solid var(--border); padding:16px 20px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:100; }
+  .header-icon { width:36px; height:36px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .header h1 { font-size:17px; font-weight:700; }
+  .header p  { font-size:12px; color:var(--muted); margin-top:1px; }
 
-  /* ── Header ── */
-  .header {
-    background: linear-gradient(135deg, #1a1d27 0%, #22263a 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .header-icon {
-    width: 36px; height: 36px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-  .header h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.5px; }
-  .header p  { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .progress-bar-wrap { height:3px; background:var(--border); }
+  .progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width 0.4s ease; }
 
-  /* ── Progress Bar ── */
-  .progress-bar-wrap {
-    height: 3px; background: var(--border);
-  }
-  .progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    transition: width 0.4s ease;
-  }
+  .step { display:none; padding:20px; }
+  .step.active { display:block; animation:fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
 
-  /* ── Steps ── */
-  .step { display: none; padding: 20px; }
-  .step.active { display: block; animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-bottom:16px; }
+  .card-title { font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .card-title::before { content:''; width:3px; height:14px; background:var(--accent); border-radius:2px; }
 
-  /* ── Cards ── */
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 16px;
-  }
-  .card-title {
-    font-size: 13px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .card-title::before {
-    content: '';
-    width: 3px; height: 14px;
-    background: var(--accent);
-    border-radius: 2px;
-  }
+  input[type="text"] { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--text); font-size:16px; outline:none; transition:border-color 0.2s; }
+  input[type="text"]:focus { border-color:var(--accent); }
+  input[type="text"]::placeholder { color:var(--muted); }
 
-  /* ── Inputs ── */
-  input[type="text"] {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    color: var(--text);
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  input[type="text"]:focus { border-color: var(--accent); }
-  input[type="text"]::placeholder { color: var(--muted); }
+  .btn { width:100%; padding:16px; border-radius:12px; border:none; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s; }
+  .btn:active { transform:scale(0.97); }
+  .btn-primary { background:linear-gradient(135deg,var(--accent),#2563eb); color:#fff; }
+  .btn-success { background:linear-gradient(135deg,var(--success),#16a34a); color:#fff; }
+  .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+  .btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
 
-  /* ── Buttons ── */
-  .btn {
-    width: 100%;
-    padding: 16px;
-    border-radius: 12px;
-    border: none;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s;
-    letter-spacing: 0.3px;
-  }
-  .btn:active { transform: scale(0.97); }
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent), #2563eb);
-    color: #fff;
-  }
-  .btn-success {
-    background: linear-gradient(135deg, var(--success), #16a34a);
-    color: #fff;
-  }
-  .btn-outline {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
-  }
-  .btn-sm {
-    width: auto;
-    padding: 10px 18px;
-    font-size: 14px;
-    border-radius: 8px;
-  }
-  .btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    transform: none;
-  }
+  .device-item { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; position:relative; overflow:hidden; cursor:pointer; }
+  .device-item.scanned { border-color:var(--success); background:rgba(34,197,94,0.06); cursor:default; }
+  .device-item.scanned::after { content:'✓ 已確認'; position:absolute; top:10px; right:12px; font-size:11px; color:var(--success); font-weight:700; }
+  .device-name { font-size:14px; font-weight:600; margin-bottom:4px; }
+  .device-serial { font-size:14px; color:#c8cfe8; font-family:monospace; }
 
-  /* ── Device List ── */
-  .device-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    transition: border-color 0.2s;
-    position: relative;
-    overflow: hidden;
-  }
-  .device-item.scanned {
-    border-color: var(--success);
-    background: rgba(34,197,94,0.06);
-  }
-  .device-item.scanned::after {
-    content: '✓ 已確認';
-    position: absolute;
-    top: 10px; right: 12px;
-    font-size: 11px;
-    color: var(--success);
-    font-weight: 700;
-  }
-  .device-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-  .device-serial { font-size: 12px; color: var(--muted); font-family: monospace; }
-  .device-model { font-size: 12px; color: var(--accent); margin-top: 2px; }
+  .photo-preview { border-radius:12px; overflow:hidden; margin-bottom:12px; border:1px solid var(--border); }
+  .photo-preview img { width:100%; display:block; }
+  .photo-placeholder { aspect-ratio:4/3; background:var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--muted); font-size:14px; }
+  .photo-placeholder .icon { font-size:40px; }
 
-  /* scanner CSS removed */
+  .info-row { display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid var(--border); font-size:14px; }
+  .info-row:last-child { border-bottom:none; }
+  .info-label { color:var(--muted); flex-shrink:0; width:80px; }
+  .info-value { font-weight:600; text-align:right; word-break:break-all; }
 
-  /* ── Camera Preview ── */
-  .photo-preview {
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 12px;
-    border: 1px solid var(--border);
-  }
-  .photo-preview img { width: 100%; display: block; }
-  .photo-placeholder {
-    aspect-ratio: 4/3;
-    background: var(--surface);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    color: var(--muted);
-    font-size: 14px;
-  }
-  .photo-placeholder .icon { font-size: 40px; }
+  .stats-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .stat-box { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+  .stat-num { font-size:28px; font-weight:800; }
+  .stat-num.green { color:var(--success); }
+  .stat-num.blue  { color:var(--accent); }
+  .stat-label { font-size:12px; color:var(--muted); margin-top:2px; }
 
-  /* ── Match Result ── */
-  .match-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 700;
-    margin-bottom: 12px;
-  }
-  .match-badge.found { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
-  .match-badge.notfound { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+  #toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(100px); background:var(--card); border:1px solid var(--border); padding:14px 22px; border-radius:40px; font-size:14px; font-weight:600; z-index:9999; transition:transform 0.3s ease; white-space:nowrap; }
+  #toast.show { transform:translateX(-50%) translateY(0); }
+  #toast.success { color:var(--success); border-color:rgba(34,197,94,0.4); }
+  #toast.error   { color:var(--danger);  border-color:rgba(239,68,68,0.4); }
 
-  /* ── Info Row ── */
-  .info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-  }
-  .info-row:last-child { border-bottom: none; }
-  .info-label { color: var(--muted); flex-shrink: 0; width: 80px; }
-  .info-value { font-weight: 600; text-align: right; word-break: break-all; }
+  .loading { text-align:center; padding:40px; color:var(--muted); font-size:14px; }
+  .spinner { display:inline-block; width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin-bottom:10px; }
+  @keyframes spin { to{transform:rotate(360deg)} }
 
-  /* ── Stats ── */
-  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-  .stat-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    text-align: center;
-  }
-  .stat-num { font-size: 28px; font-weight: 800; }
-  .stat-num.green { color: var(--success); }
-  .stat-num.blue  { color: var(--accent); }
-  .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
-  /* ── Toast ── */
-  #toast {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 14px 22px;
-    border-radius: 40px;
-    font-size: 14px;
-    font-weight: 600;
-    z-index: 9999;
-    transition: transform 0.3s ease;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  #toast.show { transform: translateX(-50%) translateY(0); }
-  #toast.success { color: var(--success); border-color: rgba(34,197,94,0.4); }
-  #toast.error   { color: var(--danger);  border-color: rgba(239,68,68,0.4); }
-
-  /* ── Loading ── */
-  .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
-  .spinner {
-    display: inline-block;
-    width: 28px; height: 28px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 10px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .gap { height: 80px; }
-  .section-title { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
-  .section-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+  .gap { height:80px; }
+  .section-title { font-size:20px; font-weight:800; margin-bottom:6px; }
+  .section-sub { font-size:14px; color:var(--muted); margin-bottom:20px; }
 </style>
 </head>
 <body>
 
-<!-- ======== HEADER ======== -->
 <div class="header">
   <div class="header-icon">📦</div>
   <div>
@@ -295,34 +90,43 @@
   <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
 </div>
 
-<!-- ======== STEP 1: LOGIN ======== -->
+<!-- TAB BAR -->
+<div id="tabBar" style="display:none; background:var(--surface); border-bottom:1px solid var(--border);">
+  <button id="tab1" onclick="switchTab('inventory')"
+    style="flex:1;padding:12px;border:none;background:transparent;color:var(--accent);font-size:14px;font-weight:700;border-bottom:2px solid var(--accent);cursor:pointer;">
+    📦 盤點
+  </button>
+  <button id="tab2" onclick="switchTab('query')"
+    style="flex:1;padding:12px;border:none;background:transparent;color:var(--muted);font-size:14px;font-weight:700;border-bottom:2px solid transparent;cursor:pointer;">
+    🔎 資產查詢
+  </button>
+</div>
+
+<!-- STEP 1: LOGIN -->
 <div class="step active" id="step1">
   <br>
-  <div style="text-align:center; padding: 20px 0 24px;">
-    <div style="font-size:56px; margin-bottom:12px;">📦</div>
+  <div style="text-align:center;padding:20px 0 24px;">
+    <div style="font-size:56px;margin-bottom:12px;">📦</div>
     <div class="section-title">設備盤點系統</div>
     <div class="section-sub">輸入姓名即可開始盤點</div>
   </div>
-
   <div class="card">
     <div class="card-title">您的姓名</div>
     <input type="text" id="nameInput" placeholder="例：朱展慶" autocomplete="off"
-      style="font-size:20px; padding:16px; text-align:center; letter-spacing:2px;"
+      style="font-size:20px;padding:16px;text-align:center;letter-spacing:2px;"
       onkeydown="if(event.key==='Enter') doLogin()">
   </div>
-
-  <button class="btn btn-primary" onclick="doLogin()" style="font-size:18px; padding:18px;">
+  <button class="btn btn-primary" onclick="doLogin()" style="font-size:18px;padding:18px;">
     🔍 查詢我的設備清單
   </button>
   <div class="gap"></div>
 </div>
 
-<!-- ======== STEP 2: DEVICE LIST ======== -->
+<!-- STEP 2: DEVICE LIST -->
 <div class="step" id="step2">
   <br>
   <div class="section-title" id="step2Title">設備清單</div>
   <div class="section-sub" id="step2Sub">點選設備後拍照確認</div>
-
   <div class="stats-row">
     <div class="stat-box">
       <div class="stat-num blue" id="statTotal">0</div>
@@ -333,38 +137,29 @@
       <div class="stat-label">已確認</div>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title">待盤點設備</div>
     <input type="text" id="searchInput" placeholder="🔍 搜尋商品名稱或序號…" autocomplete="off"
-      oninput="filterDevices(this.value)"
-      style="margin-bottom:14px;">
+      oninput="filterDevices(this.value)" style="margin-bottom:14px;">
     <div id="deviceList">
-      <div class="loading">
-        <div class="spinner"></div><br>載入中...
-      </div>
+      <div class="loading"><div class="spinner"></div><br>載入中...</div>
     </div>
   </div>
-
   <button class="btn btn-success" id="finishBtn" onclick="goStep(4)" disabled>
     ✅ 完成盤點，送出報告
   </button>
   <div class="gap"></div>
 </div>
 
-<!-- ======== STEP 3: PHOTO ======== -->
+<!-- STEP 3: PHOTO -->
 <div class="step" id="step3">
   <br>
   <div class="section-title">📷 拍照確認</div>
-  <div class="section-sub" id="scanDeviceName">拍攝設備照片供主管審核</div>
-
-  <!-- Device Info -->
+  <div class="section-sub">確認設備在身上後拍照</div>
   <div class="card">
     <div class="card-title">設備資訊</div>
     <div id="deviceInfoBox"></div>
   </div>
-
-  <!-- Photo -->
   <div class="card">
     <div class="card-title">拍攝設備照片（主管審核用）</div>
     <div class="photo-preview" id="photoPreview">
@@ -378,23 +173,19 @@
       📷 拍攝設備照片
     </button>
   </div>
-
   <button class="btn btn-success" id="confirmBtn" onclick="confirmDevice()" disabled>
     ✅ 確認此設備在身上
   </button>
   <br>
-  <button class="btn btn-outline" onclick="goStep(2)">
-    ← 返回清單
-  </button>
+  <button class="btn btn-outline" onclick="goStep(2)">← 返回清單</button>
   <div class="gap"></div>
 </div>
 
-<!-- ======== STEP 4: SUMMARY ======== -->
+<!-- STEP 4: SUMMARY -->
 <div class="step" id="step4">
   <br>
   <div class="section-title">📊 盤點結果</div>
   <div class="section-sub" id="summaryName"></div>
-
   <div class="stats-row">
     <div class="stat-box">
       <div class="stat-num green" id="sumDone">0</div>
@@ -405,23 +196,21 @@
       <div class="stat-label">未盤點</div>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title">未盤點設備</div>
     <div id="missingList"></div>
   </div>
-
   <button class="btn btn-primary" id="submitBtn" onclick="submitInventory()">
     📤 送出盤點結果
   </button>
   <div class="gap"></div>
 </div>
 
-<!-- ======== STEP 5: DONE ======== -->
+<!-- STEP 5: DONE -->
 <div class="step" id="step5">
   <br>
-  <div style="text-align:center; padding: 40px 20px;">
-    <div style="font-size:72px; margin-bottom:16px;">✅</div>
+  <div style="text-align:center;padding:40px 20px;">
+    <div style="font-size:72px;margin-bottom:16px;">✅</div>
     <div class="section-title">盤點完成！</div>
     <br>
     <div class="card" style="text-align:left">
@@ -432,41 +221,66 @@
   </div>
 </div>
 
-<!-- ======== TOAST ======== -->
+
+<!-- ======== QUERY PAGE ======== -->
+<div id="queryPage" style="display:none; padding:20px;">
+  <br>
+  <div class="section-title">🔎 資產查詢</div>
+  <div class="section-sub" id="queryOwner"></div>
+
+  <!-- Search by serial -->
+  <div class="card">
+    <div class="card-title">依序號查詢</div>
+    <div style="display:flex;gap:10px;">
+      <input type="text" id="querySerial" placeholder="輸入序號（可部分）" autocomplete="off"
+        style="flex:1;" onkeydown="if(event.key==='Enter') queryBySerial()">
+      <button class="btn btn-primary" onclick="queryBySerial()"
+        style="width:auto;padding:14px 18px;border-radius:10px;font-size:14px;">搜尋</button>
+    </div>
+    <div id="querySerialResult" style="margin-top:14px;"></div>
+  </div>
+
+  <!-- All devices -->
+  <div class="card">
+    <div class="card-title">我的所有資產</div>
+    <div id="queryAllList">
+      <div style="text-align:center;padding:20px;color:var(--muted);font-size:14px;">載入中...</div>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
 // ============================================================
-//  CONFIG — 固定設定（管理員填入，員工不需要設定）
+//  CONFIG — 管理員填入，員工不需設定
 // ============================================================
-let CONFIG = {
-  scriptUrl: 'https://script.google.com/macros/s/AKfycbxezxGp4PRtbMfAp4FSAJjW2xJcS48LzHw7MPSEelygTGwYsLBn56Bg_P3VQ1iZX4-i/exec',  // ← 部署後填入
-  sheetId:   '13XJ-LmMOoyMQiNhwbhlwR2GBS1MtNWJeM6A-IOmHEzM',              // ← 試算表ID填入
+const CONFIG = {
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbxezxGp4PRtbMfAp4FSAJjW2xJcS48LzHw7MPSEelygTGwYsLBn56Bg_P3VQ1iZX4-i/exec',
+  sheetId:   '13XJ-LmMOoyMQiNhwbhlwR2GBS1MtNWJeM6A-IOmHEzM',
 };
 
 // ============================================================
 //  STATE
 // ============================================================
-let state = {
+const state = {
   employeeName: '',
-  devices: [],          // [{serial, name, model, row}]
-  scannedItems: [],     // [{serial, name, photoBase64, time}]
+  devices: [],
+  scannedItems: [],
   currentDevice: null,
   photoBase64: null,
-  scanActive: false,
-  stream: null,
-  pendingConfirm: false,
-  barcodeDetector: null,
 };
 
 // ============================================================
-//  STEP NAVIGATION
+//  NAVIGATION
 // ============================================================
 function goStep(n) {
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
   document.getElementById('step' + n).classList.add('active');
-  const pct = [0, 25, 50, 75, 100, 100];
+  window.scrollTo(0, 0);
+  const pct = [0,25,50,75,100,100];
   document.getElementById('progressBar').style.width = pct[n] + '%';
+  if (n === 4) showSummary();
 }
 
 // ============================================================
@@ -474,135 +288,148 @@ function goStep(n) {
 // ============================================================
 async function doLogin() {
   const name = document.getElementById('nameInput').value.trim();
-
   if (!name) return showToast('請輸入您的姓名', 'error');
-
   state.employeeName = name;
   document.getElementById('headerSub').textContent = '員工：' + name;
+  document.getElementById('tabBar').style.display = 'flex';
   goStep(2);
   await loadDevices(name);
 }
 
 async function loadDevices(name) {
-  document.getElementById('deviceList').innerHTML = `
-    <div class="loading"><div class="spinner"></div><br>載入設備清單中...</div>`;
+  document.getElementById('deviceList').innerHTML =
+    '<div class="loading"><div class="spinner"></div><br>載入設備清單中...</div>';
   try {
-    const url = `${CONFIG.scriptUrl}?action=getDevices&name=${encodeURIComponent(name)}`;
+    const url = CONFIG.scriptUrl + '?action=getDevices&name=' + encodeURIComponent(name);
     const res = await fetch(url);
     const data = await res.json();
-
     if (!data.success) throw new Error(data.message || '查詢失敗');
-
     state.devices = data.devices;
     renderDeviceList();
-  } catch (e) {
-    document.getElementById('deviceList').innerHTML = `
-      <div style="color:var(--danger);font-size:14px;text-align:center;padding:20px;">
-        ⚠️ 無法連線：${e.message}<br><br>
-        <small style="color:var(--muted)">請確認 Apps Script 網址正確且已部署</small>
-      </div>`;
+  } catch(e) {
+    document.getElementById('deviceList').innerHTML =
+      '<div style="color:var(--danger);font-size:14px;text-align:center;padding:20px;">⚠️ 無法連線：' + e.message + '</div>';
   }
 }
 
+// ============================================================
+//  STEP 2 — DEVICE LIST
+// ============================================================
 function renderDeviceList() {
-  const list = document.getElementById('deviceList');
   const total = state.devices.length;
-  const done = state.scannedItems.length;
-
+  const done  = state.scannedItems.length;
   document.getElementById('statTotal').textContent = total;
-  document.getElementById('statDone').textContent = done;
+  document.getElementById('statDone').textContent  = done;
   document.getElementById('step2Title').textContent = state.employeeName + ' 的設備';
-  document.getElementById('step2Sub').textContent = `共 ${total} 件，已確認 ${done} 件`;
+  document.getElementById('step2Sub').textContent   = '共 ' + total + ' 件，已確認 ' + done + ' 件';
   document.getElementById('finishBtn').disabled = (done === 0);
-
+  document.getElementById('searchInput').value = '';
   if (total === 0) {
-    list.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px;">查無此員工名下設備</div>`;
+    document.getElementById('deviceList').innerHTML =
+      '<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px;">查無此員工名下設備</div>';
     return;
   }
-
   renderFilteredList(state.devices);
 }
 
 function filterDevices(query) {
   const q = query.trim().toLowerCase();
-  if (!q) {
-    renderFilteredList(state.devices);
-    return;
-  }
+  if (!q) { renderFilteredList(state.devices); return; }
   const filtered = state.devices.filter(d =>
-    d.name.toLowerCase().includes(q) ||
-    d.serial.toLowerCase().includes(q)
+    d.name.toLowerCase().includes(q) || d.serial.toLowerCase().includes(q)
   );
   renderFilteredList(filtered);
 }
 
 function renderFilteredList(list) {
-  const container = document.getElementById('deviceList');
   if (list.length === 0) {
-    container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px;">查無符合的設備</div>`;
+    document.getElementById('deviceList').innerHTML =
+      '<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px;">查無符合的設備</div>';
     return;
   }
-  container.innerHTML = list.map((d) => {
+  document.getElementById('deviceList').innerHTML = list.map(function(d) {
     const idx = state.devices.indexOf(d);
-    const isScanned = state.scannedItems.some(s => s.serial === d.serial);
-    return `
-      <div class="device-item ${isScanned ? 'scanned' : ''}" onclick="${isScanned ? '' : 'startScan(' + idx + ')'}">
-        <div class="device-name">${d.name}</div>
-        <div class="device-serial">序號：${d.serial}</div>
-        ${d.model ? `<div class="device-model">${d.model}</div>` : ''}
-      </div>`;
+    const done = state.scannedItems.some(function(s){ return s.serial === d.serial; });
+    return '<div class="device-item ' + (done ? 'scanned' : '') + '" ' +
+      (done ? '' : 'onclick="startScan(' + idx + ')"') + '>' +
+      '<div class="device-name">' + d.name + '</div>' +
+      '<div class="device-serial">序號：' + d.serial + '</div>' +
+      '</div>';
   }).join('');
 }
 
 // ============================================================
-//  STEP 3 — SCAN
+//  STEP 3 — PHOTO
 // ============================================================
 function startScan(idx) {
   state.currentDevice = state.devices[idx];
-  state.photoBase64 = null;
+  state.photoBase64   = null;
+  const d = state.currentDevice;
+  document.getElementById('deviceInfoBox').innerHTML =
+    '<div class="info-row"><span class="info-label">品名</span><span class="info-value">' + d.name + '</span></div>' +
+    '<div class="info-row"><span class="info-label">序號</span><span class="info-value" style="font-family:monospace;color:var(--accent)">' + d.serial + '</span></div>';
+  document.getElementById('photoPreview').innerHTML =
+    '<div class="photo-placeholder"><div class="icon">📷</div><span>點下方按鈕拍照</span></div>';
+  document.getElementById('confirmBtn').disabled = true;
+  document.getElementById('photoInput').value = '';
+  goStep(3);
+}
 
-  document.getElementById('scanDeviceName').textContent =
-    '掃描：' + state.currentDevice.name;
-  state.pendingConfirm = false;
-  document.getElementById('scanResult').style.display = 'none';
-
-
-
-
-// ============================================================
-//  PHOTO
-// ============================================================
 function onPhotoSelected(input) {
   const file = input.files[0];
   if (!file) return;
 
+  showToast('壓縮中…', 'success');
+
   const reader = new FileReader();
-  reader.onload = (e) => {
-    state.photoBase64 = e.target.result.split(',')[1];
-    document.getElementById('photoPreview').innerHTML =
-      `<img src="${e.target.result}" alt="設備照片">`;
-    document.getElementById('confirmBtn').disabled = false;
-    showToast('照片已選取 ✓', 'success');
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      // 最長邊限制 1280px，JPEG 品質 0.72
+      const MAX = 1280;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+      const compressed = canvas.toDataURL('image/jpeg', 0.72);
+      state.photoBase64 = compressed.split(',')[1];
+
+      const kb = Math.round(state.photoBase64.length * 0.75 / 1024);
+      document.getElementById('photoPreview').innerHTML =
+        '<img src="' + compressed + '" alt="設備照片">';
+      document.getElementById('confirmBtn').disabled = false;
+
+      // 自動儲存到手機相簿
+      const serial = state.currentDevice ? state.currentDevice.serial : 'photo';
+      const fname = state.employeeName + '_' + serial + '.jpg';
+      const a = document.createElement('a');
+      a.href = compressed;
+      a.download = fname;
+      a.click();
+
+      showToast('已壓縮（' + kb + ' KB），儲存至手機 ✓', 'success');
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-// ============================================================
-//  CONFIRM DEVICE
-// ============================================================
 function confirmDevice() {
   if (!state.photoBase64) return showToast('請先拍照', 'error');
-
-  const device = state.currentDevice;
+  const d = state.currentDevice;
   state.scannedItems.push({
-    serial:      device.serial,
-    name:        device.name,
+    serial:      d.serial,
+    name:        d.name,
     photoBase64: state.photoBase64,
     time:        new Date().toLocaleString('zh-TW'),
-    row:         device.row,
+    row:         d.row,
   });
-
-  showToast('✅ 已確認：' + device.name, 'success');
+  showToast('✅ 已確認：' + d.name, 'success');
   renderDeviceList();
   goStep(2);
 }
@@ -611,95 +438,183 @@ function confirmDevice() {
 //  STEP 4 — SUMMARY
 // ============================================================
 function showSummary() {
-  const total   = state.devices.length;
   const done    = state.scannedItems.length;
-  const missing = state.devices.filter(d =>
-    !state.scannedItems.some(s => s.serial === d.serial));
-
+  const missing = state.devices.filter(function(d){
+    return !state.scannedItems.some(function(s){ return s.serial === d.serial; });
+  });
   document.getElementById('summaryName').textContent =
     state.employeeName + '・' + new Date().toLocaleDateString('zh-TW') + ' 盤點';
-  document.getElementById('sumDone').textContent = done;
+  document.getElementById('sumDone').textContent    = done;
   document.getElementById('sumMissing').textContent = missing.length;
-
-  const ml = document.getElementById('missingList');
-  if (missing.length === 0) {
-    ml.innerHTML = `<div style="text-align:center;color:var(--success);padding:16px;font-weight:700;">🎉 全部設備均已確認！</div>`;
-  } else {
-    ml.innerHTML = missing.map(d => `
-      <div class="device-item">
-        <div class="device-name">${d.name}</div>
-        <div class="device-serial">序號：${d.serial}</div>
-      </div>`).join('');
-  }
+  document.getElementById('missingList').innerHTML = missing.length === 0
+    ? '<div style="text-align:center;color:var(--success);padding:16px;font-weight:700;">🎉 全部設備均已確認！</div>'
+    : missing.map(function(d){
+        return '<div class="device-item"><div class="device-name">' + d.name + '</div>' +
+          '<div class="device-serial">序號：' + d.serial + '</div></div>';
+      }).join('');
 }
 
 // ============================================================
-//  SUBMIT
+//  STEP 5 — SUBMIT
 // ============================================================
 async function submitInventory() {
-  showSummary(); // refresh counts first
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
-  btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> 上傳中...';
+  btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> 上傳照片中...';
 
   try {
+    // 照片逐張分塊上傳
+    const photoResults = {};
+    for (const item of state.scannedItems) {
+      if (item.photoBase64) {
+        btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> 上傳照片：' + item.serial.substring(0,8) + '...';
+        photoResults[item.serial] = await uploadPhotoChunked(item.serial, item.photoBase64);
+      }
+    }
+
+    // 送出盤點資料
+    btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> 送出資料中...';
     const payload = {
-      action: 'submitInventory',
+      action:       'submitInventory',
       employeeName: state.employeeName,
-      scannedItems: state.scannedItems,
-      allDevices:   state.devices.map(d => d.serial),
+      scannedItems: state.scannedItems.map(function(item){
+        return { serial: item.serial, name: item.name, time: item.time, row: item.row, photoUrl: photoResults[item.serial] || '' };
+      }),
+      allDevices:   state.devices.map(function(d){ return d.serial; }),
       submitTime:   new Date().toISOString(),
     };
 
-    // 用 GET 送出（避免 CORS 問題），照片 base64 太大要分批
-    // 先不帶照片送出基本資料，照片改用 GET 參數
-    const payloadNoPhoto = {
-      ...payload,
-      scannedItems: payload.scannedItems.map(item => ({
-        serial: item.serial,
-        name: item.name,
-        time: item.time,
-        row: item.row,
-        photoBase64: item.photoBase64 || '',
-      }))
-    };
-    const encoded = encodeURIComponent(JSON.stringify(payloadNoPhoto));
-    const url = `${CONFIG.scriptUrl}?action=submitInventory&data=${encoded}`;
-    const res = await fetch(url);
-    const data = await res.json();
-
+    const encoded = encodeURIComponent(JSON.stringify(payload));
+    const res  = await fetch(CONFIG.scriptUrl + '?action=submitInventory&data=' + encoded);
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) { throw new Error('回應格式錯誤'); }
     if (!data.success) throw new Error(data.message);
 
-    document.getElementById('finalSummary').innerHTML = `
-      <div class="info-row"><span class="info-label">員工</span><span class="info-value">${state.employeeName}</span></div>
-      <div class="info-row"><span class="info-label">時間</span><span class="info-value">${new Date().toLocaleString('zh-TW')}</span></div>
-      <div class="info-row"><span class="info-label">已確認</span><span class="info-value" style="color:var(--success)">${state.scannedItems.length} 件</span></div>
-      <div class="info-row"><span class="info-label">照片連結</span><span class="info-value"><a href="${data.folderUrl||'#'}" target="_blank" style="color:var(--accent)">查看 Drive 資料夾</a></span></div>
-    `;
+    document.getElementById('finalSummary').innerHTML =
+      '<div class="info-row"><span class="info-label">員工</span><span class="info-value">' + state.employeeName + '</span></div>' +
+      '<div class="info-row"><span class="info-label">時間</span><span class="info-value">' + new Date().toLocaleString('zh-TW') + '</span></div>' +
+      '<div class="info-row"><span class="info-label">已確認</span><span class="info-value" style="color:var(--success)">' + state.scannedItems.length + ' 件</span></div>' +
+      '<div class="info-row"><span class="info-label">照片資料夾</span><span class="info-value"><a href="' + (data.folderUrl||'#') + '" target="_blank" style="color:var(--accent)">查看 Drive</a></span></div>';
     goStep(5);
-  } catch (e) {
+
+  } catch(e) {
     btn.disabled = false;
     btn.innerHTML = '📤 送出盤點結果';
     showToast('送出失敗：' + e.message, 'error');
   }
 }
 
+async function uploadPhotoChunked(serial, base64) {
+  const CHUNK = 50000;
+  const total = Math.ceil(base64.length / CHUNK);
+  const sessionId = Date.now() + '_' + serial.replace(/[^a-zA-Z0-9]/g,'');
+  let photoUrl = '';
+
+  for (let i = 0; i < total; i++) {
+    const chunk = base64.substring(i * CHUNK, (i+1) * CHUNK);
+    const params = new URLSearchParams({
+      action: 'uploadChunk',
+      sessionId, serial,
+      employeeName: state.employeeName,
+      chunk: chunk,
+      index: i,
+      total,
+    });
+    const res  = await fetch(CONFIG.scriptUrl + '?' + params.toString());
+    const data = await res.json();
+    if (!data.success) throw new Error('照片上傳失敗：' + data.message);
+    if (data.photoUrl) photoUrl = data.photoUrl;
+  }
+  return photoUrl;
+}
+
 // ============================================================
 //  UTILS
 // ============================================================
-function showToast(msg, type = 'success') {
+function showToast(msg, type) {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.className = 'show ' + type;
-  setTimeout(() => t.className = '', 2500);
+  t.className = 'show ' + (type || 'success');
+  setTimeout(function(){ t.className = ''; }, 2500);
 }
 
-// Override goStep(4) to show summary
-const _goStep = goStep;
-window.goStep = function(n) {
-  if (n === 4) showSummary();
-  _goStep(n);
-};
+// ============================================================
+//  TAB SWITCHING
+// ============================================================
+function switchTab(tab) {
+  const isInventory = (tab === 'inventory');
+
+  // Show/hide pages
+  document.querySelectorAll('.step').forEach(s => {
+    s.style.display = isInventory ? '' : 'none';
+  });
+  document.getElementById('queryPage').style.display = isInventory ? 'none' : 'block';
+
+  // Tab active styles
+  document.getElementById('tab1').style.color        = isInventory ? 'var(--accent)' : 'var(--muted)';
+  document.getElementById('tab1').style.borderBottom = isInventory ? '2px solid var(--accent)' : '2px solid transparent';
+  document.getElementById('tab2').style.color        = isInventory ? 'var(--muted)' : 'var(--accent)';
+  document.getElementById('tab2').style.borderBottom = isInventory ? '2px solid transparent' : '2px solid var(--accent)';
+
+  if (!isInventory) loadQueryPage();
+}
+
+// ============================================================
+//  QUERY PAGE
+// ============================================================
+function loadQueryPage() {
+  document.getElementById('queryOwner').textContent = state.employeeName + ' 的資產';
+  document.getElementById('querySerial').value = '';
+  document.getElementById('querySerialResult').innerHTML = '';
+  renderQueryAll();
+}
+
+function renderQueryAll() {
+  const list = state.devices;
+  if (!list || list.length === 0) {
+    document.getElementById('queryAllList').innerHTML =
+      '<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px;">查無資產資料</div>';
+    return;
+  }
+  document.getElementById('queryAllList').innerHTML = list.map(function(d) {
+    const done = state.scannedItems.some(function(s){ return s.serial === d.serial; });
+    return '<div class="device-item" style="cursor:default;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+      '<div style="flex:1">' +
+      '<div class="device-name">' + d.name + '</div>' +
+      '<div class="device-serial">序號：' + d.serial + '</div>' +
+      '</div>' +
+      '<div style="font-size:11px;font-weight:700;margin-left:10px;flex-shrink:0;color:' +
+      (done ? 'var(--success)' : 'var(--muted)') + '">' +
+      (done ? '✓ 已盤點' : '待盤點') +
+      '</div></div></div>';
+  }).join('');
+}
+
+function queryBySerial() {
+  const q = document.getElementById('querySerial').value.trim().toLowerCase();
+  if (!q) return showToast('請輸入序號', 'error');
+
+  const results = state.devices.filter(function(d) {
+    return d.serial.toLowerCase().includes(q) || d.name.toLowerCase().includes(q);
+  });
+
+  const box = document.getElementById('querySerialResult');
+  if (results.length === 0) {
+    box.innerHTML = '<div style="color:var(--danger);font-size:14px;padding:10px 0;">查無此序號的資產</div>';
+    return;
+  }
+  box.innerHTML = results.map(function(d) {
+    const done = state.scannedItems.some(function(s){ return s.serial === d.serial; });
+    return '<div class="device-item" style="cursor:default;border-color:var(--accent);">' +
+      '<div class="device-name">' + d.name + '</div>' +
+      '<div class="device-serial">序號：' + d.serial + '</div>' +
+      '<div style="font-size:12px;margin-top:6px;color:' + (done ? 'var(--success)' : 'var(--warning)') + ';font-weight:700;">' +
+      (done ? '✅ 本次盤點已確認' : '⏳ 本次尚未盤點') + '</div>' +
+      '</div>';
+  }).join('');
+}
 </script>
 </body>
 </html>
