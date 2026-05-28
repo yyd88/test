@@ -300,9 +300,7 @@ async function loadDevices(name) {
   document.getElementById('deviceList').innerHTML =
     '<div class="loading"><div class="spinner"></div><br>載入設備清單中...</div>';
   try {
-    const url = CONFIG.scriptUrl + '?action=getDevices&name=' + encodeURIComponent(name);
-    const res = await fetch(url);
-    const data = await res.json();
+    const data = await jsonpRequest(CONFIG.scriptUrl + '?action=getDevices&name=' + encodeURIComponent(name));
     if (!data.success) throw new Error(data.message || '查詢失敗');
     state.devices = data.devices;
     renderDeviceList();
@@ -485,10 +483,7 @@ async function submitInventory() {
     };
 
     const encoded = encodeURIComponent(JSON.stringify(payload));
-    const res  = await fetch(CONFIG.scriptUrl + '?action=submitInventory&data=' + encoded);
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } catch(e) { throw new Error('回應格式錯誤'); }
+    const data = await jsonpRequest(CONFIG.scriptUrl + '?action=submitInventory&data=' + encoded);
     if (!data.success) throw new Error(data.message);
 
     document.getElementById('finalSummary').innerHTML =
@@ -521,8 +516,7 @@ async function uploadPhotoChunked(serial, base64) {
       index: i,
       total,
     });
-    const res  = await fetch(CONFIG.scriptUrl + '?' + params.toString());
-    const data = await res.json();
+    const data = await jsonpRequest(CONFIG.scriptUrl + '?' + params.toString());
     if (!data.success) throw new Error('照片上傳失敗：' + data.message);
     if (data.photoUrl) photoUrl = data.photoUrl;
   }
@@ -532,6 +526,36 @@ async function uploadPhotoChunked(serial, base64) {
 // ============================================================
 //  UTILS
 // ============================================================
+// JSONP 請求（完全繞過 CORS）
+function jsonpRequest(url) {
+  return new Promise(function(resolve, reject) {
+    const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    const script = document.createElement('script');
+    const timer = setTimeout(function() {
+      cleanup();
+      reject(new Error('連線逾時，請確認網路'));
+    }, 15000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(data) {
+      cleanup();
+      resolve(data);
+    };
+
+    script.src = url + '&callback=' + cbName;
+    script.onerror = function() {
+      cleanup();
+      reject(new Error('無法連線到伺服器'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
 function showToast(msg, type) {
   const t = document.getElementById('toast');
   t.textContent = msg;
