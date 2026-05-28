@@ -458,25 +458,15 @@ function showSummary() {
 async function submitInventory() {
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
-  btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> 上傳照片中...';
+  btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> 送出中...';
 
   try {
-    // 照片逐張分塊上傳
-    const photoResults = {};
-    for (const item of state.scannedItems) {
-      if (item.photoBase64) {
-        btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> 上傳照片：' + item.serial.substring(0,8) + '...';
-        photoResults[item.serial] = await uploadPhotoChunked(item.serial, item.photoBase64);
-      }
-    }
-
-    // 送出盤點資料
-    btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> 送出資料中...';
+    // 送出盤點資料（照片改用 Form 另外上傳）
     const payload = {
       action:       'submitInventory',
       employeeName: state.employeeName,
       scannedItems: state.scannedItems.map(function(item){
-        return { serial: item.serial, name: item.name, time: item.time, row: item.row, photoUrl: photoResults[item.serial] || '' };
+        return { serial: item.serial, name: item.name, time: item.time, row: item.row, photoUrl: '' };
       }),
       allDevices:   state.devices.map(function(d){ return d.serial; }),
       submitTime:   new Date().toISOString(),
@@ -485,6 +475,14 @@ async function submitInventory() {
     const encoded = encodeURIComponent(JSON.stringify(payload));
     const data = await jsonpRequest(CONFIG.scriptUrl + '?action=submitInventory&data=' + encoded);
     if (!data.success) throw new Error(data.message);
+
+    // 照片另外用 Form POST 上傳（不受 CORS 限制）
+    btn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;margin:0"></div> 上傳照片中...';
+    for (const item of state.scannedItems) {
+      if (item.photoBase64) {
+        await uploadPhotoForm(item.serial, item.photoBase64);
+      }
+    }
 
     document.getElementById('finalSummary').innerHTML =
       '<div class="info-row"><span class="info-label">員工</span><span class="info-value">' + state.employeeName + '</span></div>' +
@@ -500,27 +498,47 @@ async function submitInventory() {
   }
 }
 
-async function uploadPhotoChunked(serial, base64) {
-  const CHUNK = 50000;
-  const total = Math.ceil(base64.length / CHUNK);
-  const sessionId = Date.now() + '_' + serial.replace(/[^a-zA-Z0-9]/g,'');
-  let photoUrl = '';
+async function uploadPhotoForm(serial, base64) {
+  // 用隱藏 iframe + form POST 上傳照片，不受 CORS 限制
+  return new Promise(function(resolve) {
+    const iframeName = 'upload_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
 
-  for (let i = 0; i < total; i++) {
-    const chunk = base64.substring(i * CHUNK, (i+1) * CHUNK);
-    const params = new URLSearchParams({
-      action: 'uploadChunk',
-      sessionId, serial,
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = CONFIG.scriptUrl;
+    form.target = iframeName;
+    form.style.display = 'none';
+
+    const fields = {
+      action: 'uploadPhoto',
+      serial: serial,
       employeeName: state.employeeName,
-      chunk: chunk,
-      index: i,
-      total,
+      photoBase64: base64,
+      submitTime: new Date().toISOString(),
+    };
+
+    Object.keys(fields).forEach(function(key) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = fields[key];
+      form.appendChild(input);
     });
-    const data = await jsonpRequest(CONFIG.scriptUrl + '?' + params.toString());
-    if (!data.success) throw new Error('照片上傳失敗：' + data.message);
-    if (data.photoUrl) photoUrl = data.photoUrl;
-  }
-  return photoUrl;
+
+    document.body.appendChild(form);
+    form.submit();
+
+    // 等待上傳完成（給 10 秒）
+    setTimeout(function() {
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      if (form.parentNode) form.parentNode.removeChild(form);
+      resolve();
+    }, 10000);
+  });
 }
 
 // ============================================================
